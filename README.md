@@ -167,6 +167,15 @@ yarn jar app-on-yarn-demo-1.0.0-SNAPSHOT.jar com.neoremind.app.on.yarn.demo.Clie
   -shell_args "abc 123"
 
 ```
+### 4.6 本机yarn，本机运行demo
+```
+# 上传文件
+D:\devTool\hadoop-2.7.7\bin\hdfs.cmd dfs -rm -f /app-on-yarn-demo-1.0.0-SNAPSHOT.jar
+D:\devTool\hadoop-2.7.7\bin\hdfs.cmd dfs -put D:\myProject\app-on-yarn-demo\target\app-on-yarn-demo-1.0.0-SNAPSHOT.jar /
+
+# 运行命令
+D:\devTool\hadoop-2.7.7\bin\yarn.cmd jar D:\myProject\app-on-yarn-demo\target\app-on-yarn-demo-1.0.0-SNAPSHOT.jar com.neoremind.app.on.yarn.demo.Client -jar_path D:\myProject\app-on-yarn-demo\target\app-on-yarn-demo-1.0.0-SNAPSHOT.jar -jar_path_in_hdfs hdfs://localhost:9000/app-on-yarn-demo-1.0.0-SNAPSHOT.jar -appname DemoApp -master_memory 1024 -master_vcores 1 -container_memory 1024 -container_vcores 1 -num_containers 3 -memory_overhead 512 -queue default -java_opts "-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+UseConcMarkSweepGC" -shell_args "abc 123"
+```
 
 确认程序运行中。
 ```
