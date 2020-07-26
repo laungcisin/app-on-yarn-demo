@@ -447,12 +447,18 @@ public class ApplicationMaster {
                 UserGroupInformation.createRemoteUser(appSubmitterUserName);
         appSubmitterUgi.addCredentials(credentials);
 
+        // AM -> RM
+        // 与RM通信并设置相关的事件处理函数
         AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
+        // 构造一个AMRMClientAsync句柄
         amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
         amRMClient.init(conf);
         amRMClient.start();
 
+        // AM -> NM
+        // 与AM通信并设置相关的事件处理函数
         containerListener = createNMCallbackHandler();
+        // 构造一个NMClientAsync句柄
         nmClientAsync = new NMClientAsyncImpl(containerListener);
         nmClientAsync.init(conf);
         nmClientAsync.start();
@@ -473,6 +479,7 @@ public class ApplicationMaster {
 
         // Register self with ResourceManager
         // This will start heartbeating to the RM
+        // ApplicationMaster向ResourceManager注册
         RegisterApplicationMasterResponse response = amRMClient
                 .registerApplicationMaster(appMasterHostname, appMasterRpcPort,
                         appMasterTrackingUrl);
@@ -576,6 +583,7 @@ public class ApplicationMaster {
             success = false;
         }
         try {
+            // 等待应用程序运行结束
             amRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
         } catch (YarnException ex) {
             LOG.error("Failed to unregister application", ex);
@@ -597,6 +605,9 @@ public class ApplicationMaster {
         @SuppressWarnings("unchecked")
         @Override
         public void onContainersCompleted(List<ContainerStatus> completedContainers) {
+            // ApplicationMaster收到一个Container后，将启动一个独立线程与对应的NodeManager通信，
+            // 以运行任务，以此同时，如果发现某个Container被杀死，ApplicationMaster会为它重新申请资源。
+
             LOG.info("Got response from RM for container ask, completedCnt="
                     + completedContainers.size());
             for (ContainerStatus containerStatus : completedContainers) {
@@ -607,18 +618,19 @@ public class ApplicationMaster {
                         + containerStatus.getDiagnostics());
 
                 // non complete containers should not be here
+                // Container应该处于完成状态，可能是成功、失败或者被杀死三个状态之一
                 assert (containerStatus.getState() == ContainerState.COMPLETE);
 
                 // increment counters for completed/failed containers
                 int exitStatus = containerStatus.getExitStatus();
-                if (0 != exitStatus) {
+                if (0 != exitStatus) {// Container运行失败
                     // container failed
                     if (ContainerExitStatus.ABORTED != exitStatus) {
                         // shell script failed
                         // counts as completed
                         numCompletedContainers.incrementAndGet();
                         numFailedContainers.incrementAndGet();
-                    } else {
+                    } else {// Container被杀死，此时需要重新为它申请资源
                         // container was killed by framework, possibly preempted
                         // we should re-try as the container was lost for some reason
                         numAllocatedContainers.decrementAndGet();
@@ -626,7 +638,7 @@ public class ApplicationMaster {
                         // we do not need to release the container as it would be done
                         // by the RM
                     }
-                } else {
+                } else {// Container成功运行完成
                     // nothing to do
                     // container completed successfully
                     numCompletedContainers.incrementAndGet();
@@ -642,6 +654,8 @@ public class ApplicationMaster {
 
         @Override
         public void onContainersAllocated(List<Container> allocatedContainers) {
+            // ApplicationMaster收到一个Container后，将启动一个独立线程与对应的NodeManager通信，
+            // 以运行任务，以此同时，如果发现某个Container被杀死，ApplicationMaster会为它重新申请资源。
             LOG.info("Got response from RM for container ask, allocatedCnt="
                     + allocatedContainers.size());
             // We are sleeping here because there might be multiple calls
@@ -663,6 +677,10 @@ public class ApplicationMaster {
                 // + ", containerToken"
                 // +allocatedContainer.getContainerToken().getIdentifier().toString());
 
+                // NMCallbackHandler实现了NMClientAsync.CallbackHandler接口
+                // NMCallbackHandler implements NMClientAsync.CallbackHandler
+                // NMCallbackHandler containerListener = new NMCallbackHandler(ApplicationMaster)
+                // containerListener用于与NM通信
                 LaunchContainerRunnable runnableLaunchContainer =
                         new LaunchContainerRunnable(allocatedContainer, containerListener);
                 Thread launchThread = new Thread(runnableLaunchContainer);
@@ -670,6 +688,7 @@ public class ApplicationMaster {
                 // launch and start the container on a separate thread to keep
                 // the main thread unblocked
                 // as all containers may not be allocated at one go.
+                // 每个Container由一个独立线程启动
                 launchThreads.add(launchThread);
                 launchThread.start();
             }
@@ -687,6 +706,7 @@ public class ApplicationMaster {
         @Override
         public float getProgress() {
             // set progress to deliver to RM on next heartbeat
+            // 将进度汇报给ResourceManager
             float progress = (float) numCompletedContainers.get()
                     / numTotalContainers;
             return progress;
@@ -831,6 +851,7 @@ public class ApplicationMaster {
             // vargs.add("-Dlog4j.configuration=" + Constants.NESTO_YARN_APPCONTAINER_LOG4J);
 
             // Set class name
+            // NM要启动的Java Main Class
             vargs.add(Constants.MAINCLASS);
 
             // Set args for the shell command if any
@@ -900,12 +921,14 @@ public class ApplicationMaster {
         LOG.info("Request new containers count:" + askCount);
         for (int i = 0; i < askCount; ++i) {
             ContainerRequest containerAsk = setupContainerAskForRM();
+            // 添加Container请求
             amRMClient.addContainerRequest(containerAsk);
         }
         numRequestedContainers.set(numTotalContainers);
     }
 
     private synchronized void askMoreContainersIfNecessary() {
+        // 如果Container被杀死，需重新为它申请资源
         int askCount = numTotalContainers - runningContainers.size();
         if (askCount > 0) {
             LOG.info("Request more containers count:" + askCount);
