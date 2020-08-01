@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Hikari工具类: 双重加锁检查DCL（Double Check Lock）
+ * JdbcTemplateUtils工具类: 双重加锁检查DCL（Double Check Lock）
  */
 public class JdbcTemplateUtils {
     private static volatile JdbcTemplate jdbcTemplate = null;
