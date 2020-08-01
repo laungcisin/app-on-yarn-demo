@@ -623,14 +623,16 @@ public class ApplicationMaster {
 
                 // increment counters for completed/failed containers
                 int exitStatus = containerStatus.getExitStatus();
-                if (0 != exitStatus) {// Container运行失败
+                // Container运行失败
+                if (0 != exitStatus) {
                     // container failed
                     if (ContainerExitStatus.ABORTED != exitStatus) {
                         // shell script failed
                         // counts as completed
                         numCompletedContainers.incrementAndGet();
                         numFailedContainers.incrementAndGet();
-                    } else {// Container被杀死，此时需要重新为它申请资源
+                    } else {
+                        // Container被杀死，此时需要重新为它申请资源
                         // container was killed by framework, possibly preempted
                         // we should re-try as the container was lost for some reason
                         numAllocatedContainers.decrementAndGet();
@@ -638,7 +640,8 @@ public class ApplicationMaster {
                         // we do not need to release the container as it would be done
                         // by the RM
                     }
-                } else {// Container成功运行完成
+                } else {
+                    // Container成功运行完成
                     // nothing to do
                     // container completed successfully
                     numCompletedContainers.incrementAndGet();
