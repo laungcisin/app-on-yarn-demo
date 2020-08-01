@@ -2,6 +2,7 @@ package com.neoremind.app.on.yarn.demo;
 
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -9,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -74,8 +76,16 @@ public class YarnAppMasterHttpServer extends BaseHttpServer {
         }
     }
 
+//    @Override
+//    public HttpServlet getIndexPageServlet(String name) {
+//        return new WelcomeServlet(applicationMaster, name, System.currentTimeMillis());
+//    }
+
     @Override
-    public HttpServlet getIndexPageServlet(String name) {
-        return new WelcomeServlet(applicationMaster, name, System.currentTimeMillis());
+    public Map<String, HttpServlet> getAllDefinedServlet(String name, JdbcTemplate jdbcTemplate) {
+        Map<String, HttpServlet> nameServletMap = new HashMap<>();
+        WelcomeServlet welcomeServlet = new WelcomeServlet(applicationMaster, name, System.currentTimeMillis());
+        nameServletMap.put("/", welcomeServlet);
+        return nameServletMap;
     }
 }
