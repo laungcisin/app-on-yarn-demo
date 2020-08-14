@@ -467,6 +467,7 @@ public class Client {
         LOG.info("Set the environment for the application master");
         Map<String, String> env = new HashMap<String, String>();
 
+        // FIXME: Unnecessary assignment statement?
         env.put("CLASSPATH", YarnHelper.buildClassPathEnv(conf));
         env.put(Constants.JAR_FILE_PATH, appMasterJarInHDFS);
 
@@ -484,8 +485,7 @@ public class Client {
             classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR);
             classPathEnv.append(c.trim());
         }
-        classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR).append(
-                "./log4j.properties");
+        classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("./log4j.properties");
 
         // add the runtime classpath needed for tests to work
         if (conf.getBoolean(YarnConfiguration.IS_MINI_YARN_CLUSTER, false)) {
