@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.BindException;
 import java.util.Map;
@@ -98,7 +99,7 @@ public abstract class BaseHttpServer implements Closeable {
         @Override
         public void doGet(HttpServletRequest request, HttpServletResponse response)
                 throws ServletException, IOException {
-            try (PrintWriter out = new PrintWriter(
+            try (PrintStream out = new PrintStream(
                     HtmlQuoting.quoteOutputStream(response.getOutputStream()))) {
                 ReflectionUtils.printThreadInfo(out, "");
                 out.close();

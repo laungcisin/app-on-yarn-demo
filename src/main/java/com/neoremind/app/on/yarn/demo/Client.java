@@ -1,11 +1,6 @@
 package com.neoremind.app.on.yarn.demo;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -256,7 +251,7 @@ public class Client {
      */
     public boolean init(String[] args) throws ParseException {
 
-        CommandLine cliParser = new GnuParser().parse(opts, args);
+        CommandLine cliParser = new DefaultParser().parse(opts, args);
 
         if (args.length == 0) {
             throw new IllegalArgumentException("No args specified for client to initialize");
