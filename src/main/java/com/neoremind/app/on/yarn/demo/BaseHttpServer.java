@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.BindException;
 import java.util.Map;
 

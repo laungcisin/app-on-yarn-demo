@@ -104,7 +104,7 @@ public class Client {
     private int amVCores = 1;
 
     // Application master jar file
-    private String appMasterJar = "";
+    private String appMasterLocalJarPath = "";
     // Main class to invoke application master
     private final String appMasterMainClass;
 
@@ -189,9 +189,7 @@ public class Client {
     /**
      */
     public Client(Configuration conf) throws Exception {
-        this(
-                "com.neoremind.app.on.yarn.demo.ApplicationMaster",
-                conf);
+        this(Constants.APP_MASTER_MAIN_CLASS, conf);
     }
 
     Client(String appMasterMainClass, Configuration conf) {
@@ -281,7 +279,7 @@ public class Client {
             keepContainers = true;
         }
 
-        appName = cliParser.getOptionValue("appname", "AppOnYarnDemo");
+        appName = cliParser.getOptionValue("appname", Constants.DEFAULT_APP_NAME);
         amPriority = Integer.parseInt(cliParser.getOptionValue("priority", "0"));
         amQueue = cliParser.getOptionValue("queue", "default");
         amMemory = Integer.parseInt(cliParser.getOptionValue("master_memory", "10"));
@@ -300,7 +298,7 @@ public class Client {
             throw new IllegalArgumentException("No jar file path specified for application master");
         }
 
-        appMasterJar = cliParser.getOptionValue("jar_path");
+        appMasterLocalJarPath = cliParser.getOptionValue("jar_path");
 
         if (!cliParser.hasOption("jar_path_in_hdfs")) {
             throw new IllegalArgumentException("No jar file path in hdfs specified for application master");
@@ -368,11 +366,9 @@ public class Client {
         yarnClient.start();
 
         YarnClusterMetrics clusterMetrics = yarnClient.getYarnClusterMetrics();
-        LOG.info("Got Cluster metric info from ASM"
-                + ", numNodeManagers=" + clusterMetrics.getNumNodeManagers());
+        LOG.info("Got Cluster metric info from ASM, numNodeManagers=" + clusterMetrics.getNumNodeManagers());
 
-        List<NodeReport> clusterNodeReports = yarnClient.getNodeReports(
-                NodeState.RUNNING);
+        List<NodeReport> clusterNodeReports = yarnClient.getNodeReports(NodeState.RUNNING);
         LOG.info("Got Cluster node info from ASM");
         for (NodeReport node : clusterNodeReports) {
             LOG.info("Got node report from ASM for"
@@ -408,7 +404,7 @@ public class Client {
         // Memory ask has to be a multiple of min and less than max.
         // Dump out information about cluster capability as seen by the resource manager
         int maxMem = appResponse.getMaximumResourceCapability().getMemory();
-        LOG.info("Max mem capabililty of resources in this cluster " + maxMem);
+        LOG.info("Max mem capability of resources in this cluster " + maxMem);
 
         // A resource ask cannot exceed the max.
         if (amMemory + memoryOverhead > maxMem) {
@@ -419,7 +415,7 @@ public class Client {
         }
 
         int maxVCores = appResponse.getMaximumResourceCapability().getVirtualCores();
-        LOG.info("Max virtual cores capabililty of resources in this cluster " + maxVCores);
+        LOG.info("Max virtual cores capability of resources in this cluster " + maxVCores);
 
         if (amVCores > maxVCores) {
             LOG.info("AM virtual cores specified above max threshold of cluster. "
@@ -428,7 +424,7 @@ public class Client {
             amVCores = maxVCores;
         }
 
-        // set the application name
+        // set the ApplicationSubmissionContext
         ApplicationSubmissionContext appContext = app.getApplicationSubmissionContext();
         ApplicationId appId = appContext.getApplicationId();
 
@@ -444,7 +440,7 @@ public class Client {
         // Copy the application master jar to the filesystem
         // Create a local resource to point to the destination jar path
         FileSystem fs = FileSystem.get(conf);
-        addToLocalResources(fs, appMasterJar, APP_MASTER_JAR_PATH, appId.toString(),
+        addToLocalResources(fs, appMasterLocalJarPath, APP_MASTER_JAR_PATH, appId.toString(),
                 localResources, null);
         YarnHelper.addFrameworkToDistributedCache(appMasterJarInHDFS, localResources, conf);
 
@@ -688,15 +684,12 @@ public class Client {
     private void addToLocalResources(FileSystem fs, String fileSrcPath,
                                      String fileDstPath, String appId, Map<String, LocalResource> localResources,
                                      String resources) throws IOException {
-        String suffix =
-                appName + "/" + appId + "/" + fileDstPath;
-        Path dst =
-                new Path(fs.getHomeDirectory(), suffix);
+        String suffix = appName + "/" + appId + "/" + fileDstPath;
+        Path dst = new Path(fs.getHomeDirectory(), suffix);
         if (fileSrcPath == null) {
             FSDataOutputStream ostream = null;
             try {
-                ostream = FileSystem
-                        .create(fs, dst, new FsPermission((short) 0710));
+                ostream = FileSystem.create(fs, dst, new FsPermission((short) 0710));
                 ostream.writeUTF(resources);
             } finally {
                 IOUtils.closeQuietly(ostream);

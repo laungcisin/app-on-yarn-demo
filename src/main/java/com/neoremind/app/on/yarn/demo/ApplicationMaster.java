@@ -855,7 +855,7 @@ public class ApplicationMaster {
 
             // Set class name
             // NM要启动的Java Main Class
-            vargs.add(Constants.MAINCLASS);
+            vargs.add(Constants.MAIN_CLASS);
 
             // Set args for the shell command if any
             vargs.add(shellArgs);

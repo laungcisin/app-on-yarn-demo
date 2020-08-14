@@ -30,11 +30,11 @@ public class YarnHelper {
                 .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("$HADOOP_CONF_DIR")
                 .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("$JAVA_HOME/lib/tools.jar")
                 .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("$PWD/")
-                .append(Constants.JAR_FILE_LINKEDNAME).append("/")
+                .append(Constants.JAR_FILE_LINKED_NAME).append("/")
                 .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("$PWD/")
-                .append(Constants.JAR_FILE_LINKEDNAME).append("/conf/")
+                .append(Constants.JAR_FILE_LINKED_NAME).append("/conf/")
                 .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("$PWD/")
-                .append(Constants.JAR_FILE_LINKEDNAME).append("/*");
+                .append(Constants.JAR_FILE_LINKED_NAME).append("/*");
         for (String c : conf.getStrings(
                 YarnConfiguration.YARN_APPLICATION_CLASSPATH,
                 YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
@@ -65,7 +65,7 @@ public class YarnHelper {
         uri = frameworkPath.toUri();
         try {
             uri = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(),
-                    null, Constants.JAR_FILE_LINKEDNAME);
+                    null, Constants.JAR_FILE_LINKED_NAME);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
@@ -76,6 +76,6 @@ public class YarnHelper {
                         ConverterUtils.getYarnUrlFromURI(uri),
                         LocalResourceType.ARCHIVE, LocalResourceVisibility.PRIVATE,
                         scFileStatus.getLen(), scFileStatus.getModificationTime());
-        localResources.put(Constants.JAR_FILE_LINKEDNAME, scRsrc);
+        localResources.put(Constants.JAR_FILE_LINKED_NAME, scRsrc);
     }
 }
