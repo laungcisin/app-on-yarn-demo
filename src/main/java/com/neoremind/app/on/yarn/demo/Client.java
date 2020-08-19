@@ -249,7 +249,7 @@ public class Client {
      */
     public boolean init(String[] args) throws ParseException {
 
-        CommandLine cliParser = new DefaultParser().parse(opts, args);
+        CommandLine cliParser = new GnuParser().parse(opts, args);
 
         if (args.length == 0) {
             throw new IllegalArgumentException("No args specified for client to initialize");
