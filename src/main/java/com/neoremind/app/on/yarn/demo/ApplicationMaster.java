@@ -38,10 +38,12 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
+import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
@@ -203,6 +205,9 @@ public class ApplicationMaster {
 
     // Container memory overhead in MB
     private int memoryOverhead = 384;
+
+    // All nodes in cluster
+    private static List<String> nodeList = new ArrayList<>();
 
     public static void main(String[] args) {
         boolean result = false;
@@ -399,6 +404,19 @@ public class ApplicationMaster {
         }
         requestPriority = Integer.parseInt(cliParser
                 .getOptionValue("priority", "0"));
+
+        // Get all nodes
+        try {
+            YarnClient yarnClient = YarnClient.createYarnClient();
+            yarnClient.init(conf);
+            yarnClient.start();
+            List<NodeReport> clusterNodeReports = yarnClient.getNodeReports(NodeState.RUNNING);
+            for (NodeReport node : clusterNodeReports) {
+                nodeList.add(node.getNodeId().getHost());
+            }
+        } catch (YarnException e) {
+            e.printStackTrace();
+        }
 
         return true;
     }
@@ -908,8 +926,18 @@ public class ApplicationMaster {
         Resource capability = Resource.newInstance(containerMemory + memoryOverhead,
                 containerVirtualCores);
 
-        ContainerRequest request = new ContainerRequest(capability, null, null,
-                pri);
+        String[] nodes = null;
+        if (!nodeList.isEmpty()) {
+            nodes = new String[1];
+            nodes[0] = nodeList.get(0);
+            nodeList.remove(0);
+        }
+
+        // 默认的nodes为null
+        // 考虑到本地性松弛，有可能节点1没有满足条件的Container可以分配，为了不让此Container分配到其余节点上，
+        // 需要将本地性松弛参数关闭，即参数传入false。
+        ContainerRequest request = new ContainerRequest(capability, nodes, null,
+                pri, false);
         LOG.info("Requested container ask: " + request.toString());
         return request;
     }
