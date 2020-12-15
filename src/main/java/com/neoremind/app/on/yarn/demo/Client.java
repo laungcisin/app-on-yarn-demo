@@ -156,6 +156,11 @@ public class Client {
     private String appMasterJarInHDFS = "";
 
     /**
+     * temp path in hdfs
+     */
+    private String tempPathInHdfs = "";
+
+    /**
      * @param args Command line arguments
      */
     public static void main(String[] args) {
@@ -651,6 +656,13 @@ public class Client {
                 LOG.info("Application did not finish."
                         + " YarnState=" + state.toString() + ", DSFinalStatus=" + dsStatus.toString()
                         + ". Breaking monitoring loop");
+
+                // delete temp dir
+                LOG.info("Delete temp hdfs dir: " + this.tempPathInHdfs);
+                FileSystem fs = FileSystem.get(conf);
+                Path path = new Path(fs.getHomeDirectory(), this.tempPathInHdfs);
+                fs.delete(path, true);
+
                 return false;
             }
 
@@ -685,6 +697,7 @@ public class Client {
                                      String fileDstPath, String appId, Map<String, LocalResource> localResources,
                                      String resources) throws IOException {
         String suffix = appName + "/" + appId + "/" + fileDstPath;
+        this.tempPathInHdfs = appName + "/" + appId;
         Path dst = new Path(fs.getHomeDirectory(), suffix);
         if (fileSrcPath == null) {
             FSDataOutputStream ostream = null;
