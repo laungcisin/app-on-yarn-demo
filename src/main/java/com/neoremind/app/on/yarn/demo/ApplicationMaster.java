@@ -926,18 +926,20 @@ public class ApplicationMaster {
         Resource capability = Resource.newInstance(containerMemory + memoryOverhead,
                 containerVirtualCores);
 
+        boolean relaxLocality = true;
         String[] nodes = null;
         if (!nodeList.isEmpty()) {
             nodes = new String[1];
             nodes[0] = nodeList.get(0);
             nodeList.remove(0);
+            relaxLocality = false;
         }
 
         // 默认的nodes为null
         // 考虑到本地性松弛，有可能节点1没有满足条件的Container可以分配，为了不让此Container分配到其余节点上，
         // 需要将本地性松弛参数关闭，即参数传入false。
         ContainerRequest request = new ContainerRequest(capability, nodes, null,
-                pri, false);
+                pri, relaxLocality);
         LOG.info("Requested container ask: " + request.toString());
         return request;
     }
